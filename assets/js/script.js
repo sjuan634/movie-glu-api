@@ -108,10 +108,24 @@ async function buildNowShowingList () {
     nowShowingFilmDiv.appendChild(synopsisEl);
     nowShowingListDiv.appendChild(nowShowingFilmDiv);
     mainEl.appendChild(nowShowingListDiv);
-      }
   }
+  return mainEl;
+}
 
-buildNowShowingList();
+
+// const showtimeBtns = document.querySelectorAll('button');
+// console.log(showtimeBtns);
+// function handleViewShowtimeClick() {
+//   const filmID = this.parentElement.id;
+//   console.log(filmID);
+// }
+
+// showtimeBtns.forEach(function(button) {
+//     button.addEventListener('click', handleViewShowtimeClick,);
+// });
+
+
+
 // function successPosition (position) {
 // //   console.log(position);
 //   const userLocation = {
