@@ -1,41 +1,10 @@
+// google API key AIzaSyAEbZW4uFqVbf4qom4lu0Hgj6BZ71Cm1dE
+// call URL https://maps.googleapis.com/maps/api/geocode/json?address=1600+Amphitheatre+Parkway,+Mountain+View,+CA&key=YOUR_API_KEY
 var mainEl = document.querySelector('main');
+var locationForm = document.querySelector('#location-form');
+var cinemasNearbyDiv = document.querySelector('#cinemas-nearby');
 
-function successPosition (position) {
-  var userLocation = {
-    latitude: position.coords.latitude,
-    longitude: position.coords.longitude
-  }
-  console.log(userLocation)
-  function cinemasNearbyData() {
-    fetch(moviegluCall.cinemasNearbyEndpoint, {
-      "headers": {
-        "api-version": moviegluCall.apiVersion,
-        "Authorization": moviegluCall.authorization,
-        "client": moviegluCall.client,
-        "x-api-key": moviegluCall.apikey,
-        "device-datetime": moviegluCall.datetime,
-        "territory": moviegluCall.territory,
-        "geolocation": `${userLocation.latitude};${userLocation.longitude}`
-      },
-    })
-    .then(function (response) {
-      return response.json();
-      })
-      .then(function (data) {
-        console.log(data)
-        return data;
-      });
-    }
-  cinemasNearbyData();
-}
-
-function errorPosition (error) {
-  console.log(error);
-}
-
-navigator.geolocation.getCurrentPosition(successPosition, errorPosition);
-
-const moviegluCall = {
+var moviegluCall = {
   cinemasNearbyEndpoint: 'https://api-gate2.movieglu.com/cinemasNearby/',
   cinemaShowtimesEndpoint: 'https://api-gate2.movieglu.com/cinemaShowTimes/',
   apiVersion: 'v200',
@@ -57,7 +26,94 @@ var moviegluSandbox = {
   territory: 'XX'
 }
 
+function geocode(event) {
+  event.preventDefault();
 
+  var zipCode = document.querySelector('#zipcode-input').value;
+  var geocodeApiKey = 'AIzaSyAEbZW4uFqVbf4qom4lu0Hgj6BZ71Cm1dE';
+  var apiURL = `https://maps.googleapis.com/maps/api/geocode/json?address=${zipCode}&key=${geocodeApiKey}`;
+  
+  
+  fetch(apiURL)
+  .then(function (response) {
+    return response.json();
+  })
+  .then(function (data) {
+    var latitude = data.results[0].geometry.location.lat;
+    var longitude = data.results[0].geometry.location.lng;
+    
+    function fetchCinemasNearbyData() {
+      var data =   fetch(moviegluSandbox.cinemasNearbyEndpoint, {
+        "headers": {
+          "api-version": moviegluSandbox.apiVersion,
+          "Authorization": moviegluSandbox.authorization,
+          "client": moviegluSandbox.client,
+          "x-api-key": moviegluSandbox.apikey,
+          "device-datetime": moviegluSandbox.datetime,
+          "territory": moviegluSandbox.territory,
+          "geolocation": '-22.0;14.0',
+          // "geolocation": `${latitude};${longitude}`
+        },
+      })
+      .then(function (response) {
+        return response.json();
+      })
+      .then(function (data) {
+        return data;
+      });
+      return data;
+  }
+
+  async function displayResults () {
+    var data = await fetchCinemasNearbyData();
+    
+    console.log(data);
+    for (let i = 0; i < data.cinemas.length; i++) {
+      var cinemaName = data.cinemas[i].cinema_name;
+      var cinemaID = data.cinemas[i].cinema_id;
+      var cinemaLat = data.cinemas[i].lat;
+      var cinemaLng = data.cinemas[i].lng;
+
+      var cinemaDivEl = document.createElement('div');
+      cinemaDivEl.id = cinemaID;
+      cinemaDivEl.classList.add('cinema');
+      cinemaDivEl.setAttribute('data-lat', cinemaLat);
+      cinemaDivEl.setAttribute('data-lng', cinemaLng);
+      var cinemaLogoEl = document.createElement('img');
+      cinemaLogoEl.src = data.cinemas[i].logo_url;
+      cinemaLogoEl.alt = 'Cinema Logo'
+      var cinemaNameEl = document.createElement('h2');
+      cinemaNameEl.textContent = cinemaName;
+      var showtimesBtn = document.createElement('button');
+      showtimesBtn.classList.add('showtime-btn');
+      showtimesBtn.textContent = 'View Showtimes';
+      var showMapBtn = document.createElement('button');
+      showMapBtn.classList.add('show-map-btn');
+      showMapBtn.textContent = 'Show on map';
+
+      cinemaDivEl.appendChild(cinemaLogoEl);
+      cinemaDivEl.appendChild(cinemaNameEl);
+      cinemaDivEl.appendChild(showtimesBtn);
+      cinemaDivEl.appendChild(showMapBtn);
+      cinemasNearbyDiv.appendChild(cinemaDivEl);
+    }
+    
+    var showtimeBtns = cinemasNearbyDiv.querySelectorAll('.showtime-btn');
+
+    function handleViewShowtimeClick() {
+      
+    }
+
+    showtimeBtns.forEach(function(showtimesBtn) {
+    showtimesBtn.addEventListener('click', handleShowtimesClick);
+    });
+  }
+
+  displayResults();
+  });
+}
+
+locationForm.addEventListener('submit', geocode);
 
 
 // console.log(cinemasNearbyData)
@@ -175,6 +231,20 @@ var moviegluSandbox = {
 // showtimeBtns.forEach(function(button) {
 //     button.addEventListener('click', handleViewShowtimeClick,);
 // });
+
+// function successPosition (position) {
+//   var userLocation = {
+//     latitude: position.coords.latitude,
+//     longitude: position.coords.longitude
+//   }
+//   return userLocation;
+// }
+
+// function errorPosition (error) {
+//   console.log(error);
+// }
+
+// navigator.geolocation.getCurrentPosition(successPosition, errorPosition);
 
 
 
