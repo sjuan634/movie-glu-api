@@ -1,5 +1,3 @@
-// google API key AIzaSyAEbZW4uFqVbf4qom4lu0Hgj6BZ71Cm1dE
-// call URL https://maps.googleapis.com/maps/api/geocode/json?address=1600+Amphitheatre+Parkway,+Mountain+View,+CA&key=YOUR_API_KEY
 var mainEl = document.querySelector('main');
 var locationForm = document.querySelector('#location-form');
 var cinemasNearbyDiv = document.querySelector('#cinemas-nearby');
@@ -64,15 +62,16 @@ function geocode(event) {
       return data;
   }
 
-  async function displayResults () {
-    var data = await fetchCinemasNearbyData();
+  async function displayCinemaResults () {
+    cinemasNearbyDiv.innerHTML = '';
+    var cinemaData = await fetchCinemasNearbyData();
     
-    console.log(data);
-    for (let i = 0; i < data.cinemas.length; i++) {
-      var cinemaName = data.cinemas[i].cinema_name;
-      var cinemaID = data.cinemas[i].cinema_id;
-      var cinemaLat = data.cinemas[i].lat;
-      var cinemaLng = data.cinemas[i].lng;
+    console.log(cinemaData);
+    for (let i = 0; i < cinemaData.cinemas.length; i++) {
+      var cinemaName = cinemaData.cinemas[i].cinema_name;
+      var cinemaID = cinemaData.cinemas[i].cinema_id;
+      var cinemaLat = cinemaData.cinemas[i].lat;
+      var cinemaLng = cinemaData.cinemas[i].lng;
 
       var cinemaDivEl = document.createElement('div');
       cinemaDivEl.id = cinemaID;
@@ -80,7 +79,7 @@ function geocode(event) {
       cinemaDivEl.setAttribute('data-lat', cinemaLat);
       cinemaDivEl.setAttribute('data-lng', cinemaLng);
       var cinemaLogoEl = document.createElement('img');
-      cinemaLogoEl.src = data.cinemas[i].logo_url;
+      cinemaLogoEl.src = cinemaData.cinemas[i].logo_url;
       cinemaLogoEl.alt = 'Cinema Logo'
       var cinemaNameEl = document.createElement('h2');
       cinemaNameEl.textContent = cinemaName;
@@ -89,7 +88,7 @@ function geocode(event) {
       showtimesBtn.textContent = 'View Showtimes';
       var showMapBtn = document.createElement('button');
       showMapBtn.classList.add('show-map-btn');
-      showMapBtn.textContent = 'Show on map';
+      showMapBtn.textContent = 'View Map';
 
       cinemaDivEl.appendChild(cinemaLogoEl);
       cinemaDivEl.appendChild(cinemaNameEl);
@@ -100,8 +99,70 @@ function geocode(event) {
     
     var showtimeBtns = cinemasNearbyDiv.querySelectorAll('.showtime-btn');
 
-    function handleViewShowtimeClick() {
-      
+    function handleShowtimesClick() {
+      var cinemaDiv = this.parentElement;
+      var cinemaID = cinemaDiv.id;
+
+      function fetchCinemasShowtimesData() {
+        var data =   fetch(`${moviegluSandbox.cinemaShowtimesEndpoint}?cinema_id=${cinemaID}&date=${new Date().toISOString().split('T')[0]}`, {
+          "headers": {
+            "api-version": moviegluSandbox.apiVersion,
+            "Authorization": moviegluSandbox.authorization,
+            "client": moviegluSandbox.client,
+            "x-api-key": moviegluSandbox.apikey,
+            "device-datetime": moviegluSandbox.datetime,
+            "territory": moviegluSandbox.territory,
+            // "geolocation": '-22.0;14.0',
+            // "geolocation": `${latitude};${longitude}`
+          },
+        })
+        .then(function (response) {
+          return response.json();
+        })
+        .then(function (data) {
+          return data;
+        });
+        return data;
+      }
+
+      async function displayShowtimesResults () {
+        var showtimesData = await fetchCinemasShowtimesData();
+        console.log(showtimesData);
+        var films = showtimesData.films;
+        console.log(films);
+        var showtimesDivEl = document.createElement('div');
+        showtimesDivEl.classList.add('showtimes');
+        showtimesDivEl.innerHTML = '';
+
+        for (let i = 0; i < films.length; i++) {
+          var filmDivEl = document.createElement('div');
+          filmDivEl.id = films[i].film_id;
+          filmDivEl.classList.add('film');
+          var filmTitleEl = document.createElement('h3');
+          filmTitleEl.textContent = `${films[i].film_name} `;
+
+          if (films[i].images.poster.length === undefined) {
+            var filmPosterEl = document.createElement('img');
+            filmPosterEl.setAttribute('src', films[i].images.poster[1].medium.film_image);
+            filmPosterEl.setAttribute('alt', 'Movie Poster');
+          } else {
+            var filmPosterEl = document.createElement('img');
+            filmPosterEl.setAttribute('src', './assets/images/placeholder.png');
+            filmPosterEl.setAttribute('alt', 'Movie poster not available');
+          }
+
+          var ageRatingEl = document.createElement('span');
+          ageRatingEl.textContent = films[i].age_rating[0].rating;
+
+          filmTitleEl.appendChild(ageRatingEl);
+          filmDivEl.appendChild(filmTitleEl);
+          filmDivEl.appendChild(filmPosterEl);
+          showtimesDivEl.appendChild(filmDivEl);
+          cinemaDiv.insertAdjacentElement('beforeend', showtimesDivEl);
+        }
+      }
+
+      displayShowtimesResults();
     }
 
     showtimeBtns.forEach(function(showtimesBtn) {
@@ -109,144 +170,11 @@ function geocode(event) {
     });
   }
 
-  displayResults();
+  displayCinemaResults();
   });
 }
 
 locationForm.addEventListener('submit', geocode);
-
-
-// console.log(cinemasNearbyData)
-
-// async function fetchFilmsNowShowing() {
-//   const response = await fetch(moviegluCall.cinemasNearbyEndpoint, {
-//     "headers": {
-//         "api-version": moviegluCall.apiVersion,
-//         "Authorization": moviegluCall.authorization,
-//         "client": moviegluCall.client,
-//         "x-api-key": moviegluCall.apikey,
-//         "device-datetime": moviegluCall.datetime,
-//         "territory": moviegluCall.territory,
-//     },
-// });
-//   const data = await response.json();
-//   console.log(data)
-//   return data;
-// }
-
-// async function fetchFilmShowTimes(filmID, date) {
-//   const response = await fetch(`${moviegluCall.cinemaShowtimesEndpoint}?film_id=${filmID}&date=${date}`, {
-//     "headers": {
-//         "api-version": moviegluCall.apiVersion,
-//         "Authorization": moviegluCall.authorization,
-//         "client": moviegluCall.client,
-//         "x-api-key": moviegluCall.apikey,
-//         "device-datetime": moviegluCall.datetime,
-//         "territory": moviegluCall.territory,
-//     },
-// });
-//   const data = await response.json();
-//   return data;
-// }
-
-// async function fetchCinemaDetails(cinemaID) {
-//   const response = await fetch(`${moviegluCall.cinemasNearbyEndpoint}?cinema_id=${cinemaID}`, {
-//     "headers": {
-//         "api-version": moviegluCall.apiVersion,
-//         "Authorization": moviegluCall.authorization,
-//         "client": moviegluCall.client,
-//         "x-api-key": moviegluCall.apikey,
-//         "device-datetime": moviegluCall.datetime,
-//         "territory": moviegluCall.territory,
-//     },
-// });
-//   const data = await response.json();
-//   return data;
-// }
-
-// async function getFilmsNowShowing () {
-// const filmsNowShowingData = await fetchFilmsNowShowing();
-// return filmsNowShowingData;
-// }
-
-// async function getFilmShowTimes () {
-// const filmShowTimesData = await fetchFilmShowTimes();
-// console.log(filmShowTimesData);
-// }
-
-// async function getCinemaDetails () {
-// const cinemaDetailsData = await fetchCinemaDetails();
-// console.log(cinemaDetailsData);
-// }
-
-// async function buildNowShowingList () {
-//   const filmsNowShowingData = await getFilmsNowShowing();
-//   for (const films of filmsNowShowingData.films) {
-//     const nowShowingListDiv = document.createElement('div');
-//     const nowShowingFilmDiv = document.createElement('div');
-//     nowShowingFilmDiv.setAttribute('id', films.film_id);
-//     const movieTitleEl = document.createElement('h2');
-//     movieTitleEl.textContent = films.film_name;
-
-//     if (films.images.poster.length === undefined) {
-//       var moviePosterEl = document.createElement('img');
-//       moviePosterEl.setAttribute('src', films.images.poster[1].medium.film_image);
-//       moviePosterEl.setAttribute('alt', 'Movie Poster');
-//     } else {
-//       var moviePosterEl = document.createElement('img');
-//       moviePosterEl.setAttribute('src', './assets/images/placeholder.png');
-//       moviePosterEl.setAttribute('alt', 'Movie poster not available');
-//     }
-
-//     const ageRatingEl = document.createElement('span');
-//     ageRatingEl.textContent = films.age_rating[0].rating;
-//     const releaseDateEl = document.createElement('span');
-//     releaseDateEl.textContent = films.release_dates[0].release_date;
-//     const synopsisEl = document.createElement('p');
-//     synopsisEl.textContent = films.synopsis_long;
-//     const showTimeBtnEl = document.createElement('button');
-//     showTimeBtnEl.textContent = 'View Showtimes';
-
-//     nowShowingFilmDiv.appendChild(movieTitleEl);
-//     nowShowingFilmDiv.appendChild(moviePosterEl);
-//     nowShowingFilmDiv.appendChild(releaseDateEl);
-//     nowShowingFilmDiv.appendChild(ageRatingEl);
-//     nowShowingFilmDiv.appendChild(showTimeBtnEl);
-//     nowShowingFilmDiv.appendChild(synopsisEl);
-//     nowShowingListDiv.appendChild(nowShowingFilmDiv);
-//     mainEl.appendChild(nowShowingListDiv);
-//   }
-//   return mainEl;
-// }
-
-// buildNowShowingList()
-
-// const showtimeBtns = document.querySelectorAll('button');
-// console.log(showtimeBtns);
-// function handleViewShowtimeClick() {
-//   const filmID = this.parentElement.id;
-//   console.log(filmID);
-// }
-
-// showtimeBtns.forEach(function(button) {
-//     button.addEventListener('click', handleViewShowtimeClick,);
-// });
-
-// function successPosition (position) {
-//   var userLocation = {
-//     latitude: position.coords.latitude,
-//     longitude: position.coords.longitude
-//   }
-//   return userLocation;
-// }
-
-// function errorPosition (error) {
-//   console.log(error);
-// }
-
-// navigator.geolocation.getCurrentPosition(successPosition, errorPosition);
-
-
 
 
 //key
